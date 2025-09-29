@@ -1,6 +1,4 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from config import torch, nn, F
 from transformers_block import TransformerBlock
 import nltk
 import ssl
@@ -76,5 +74,5 @@ predicted_indices = torch.argmax(probs, dim=-1)  # Shape: [1, 16]
 print(f"Predicted indices: {predicted_indices}")
 
 # Convert to words
-predicted_words = detokenizer(predicted_indices, vocab)
+predicted_words = detokenizer([predicted_indices.item()], vocab)
 print(f"Predicted words: {predicted_words}")

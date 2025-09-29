@@ -1,5 +1,4 @@
-import torch
-import torch.nn as nn
+from config import torch, nn
 
 class SelfAttention(nn.Module):
 	def __init__(self, embed_dim):

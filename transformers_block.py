@@ -1,6 +1,4 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from config import torch, nn, F
 from multi_head_attention import MultiHeadAttention
 
 class TransformerBlock(nn.Module):

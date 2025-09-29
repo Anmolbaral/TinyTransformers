@@ -1,6 +1,5 @@
 from self_attention import SelfAttention
-import torch
-import torch.nn as nn
+from config import torch, nn
 
 class MultiHeadAttention(nn.Module):
 	def __init__(self, query_dim, num_heads):
