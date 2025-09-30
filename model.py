@@ -1,15 +1,6 @@
 from config import torch, nn, F
 from transformers_block import TransformerBlock
 import nltk
-import ssl
-
-# Fix SSL certificate issue for NLTK downloads
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    pass
-else:
-    ssl._create_default_https_context = _create_unverified_https_context
 
 # Download brown corpus if not already available
 try:
@@ -36,16 +27,14 @@ class TinyTransformer(nn.Module):
 		return x
 
 
-# Create vocabulary and model
-# Get unique words from Brown corpus and add special tokens
+# Create vocabulary
 all_words = brown.words()
 unique_words = list(set(all_words))[:1000]  # Limit vocabulary size
 vocab = ["<unk>", "<pad>", "<mask>"] + unique_words  # Add special tokens
-print(f"Vocab size: {len(vocab)}")
 wordToId = {word: idx for idx, word in enumerate(vocab)}
 
 def tokenizer(sentence, wordToId):
-	words = sentence.split()
+	words = sentence.lower().split()
 	tokens = []
 	for word in words:
 		if word in wordToId:
@@ -54,25 +43,20 @@ def tokenizer(sentence, wordToId):
 			tokens.append(wordToId["<unk>"])
 	return tokens
 
-def detokenizer(tokens, vocab):
-	return " ".join([vocab[token] for token in tokens])
+# Example: next-word prediction for a context (no <mask>)
+context = "the cat ate"
+input_tokens = torch.tensor([tokenizer(context, wordToId)])  # [1, seq_len]
+print(f"Context: '{context}' → tokens: {input_tokens}")
 
-input_tokens = torch.tensor([tokenizer("the cat ate <mask>", wordToId)])
-print(f"Input tokens: {input_tokens}")
-
-# Get model output
+# Build model and switch to eval for inference
 model = TinyTransformer(len(vocab), 128, 8, 2)
-logits = model(input_tokens)
-print(f"Logits shape: {logits.shape}")
+model.eval()
 
-# Get probabilities
-probs = F.softmax(logits[0, -1, :], dim=-1)
-print(f"Probabilities shape: {probs.shape}")
+with torch.no_grad():
+    logits = model(input_tokens)  # [1, seq_len, vocab]
+    next_token_logits = logits[0, -1, :]  # logits for next word given context
+    probs = F.softmax(next_token_logits, dim=-1)
+    predicted_id = torch.argmax(probs).item()
 
-# Get predicted token IDs
-predicted_indices = torch.argmax(probs, dim=-1)  # Shape: [1, 16]
-print(f"Predicted indices: {predicted_indices}")
-
-# Convert to words
-predicted_words = detokenizer([predicted_indices.item()], vocab)
-print(f"Predicted words: {predicted_words}")
+predicted_word = vocab[predicted_id]
+print(f"Predicted next word: {predicted_word}")
